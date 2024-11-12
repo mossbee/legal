@@ -1,0 +1,62 @@
+For solving the problem of detecting the contradiction in legal normative document, we utilize two different ontology: Subject ontology and authority ontology.
+
+\begin{definition}
+    A subject ontology $O$ consists of two elements 
+    
+    $$\{L_S, L_R \}$$
+    
+    where $L_S$ is a set of legal subjects, each entity is a class; $L_R$ is a set of individuals; $L_P$ is a set contains all properties and $L_A$ is a set of axioms.
+\end{definition}
+
+\subsection{Evaluation}
+
+Our research is evaluated on a book called "SỔ TAY TÌNH HUỐNG NGHIỆP VỤ KIỂM TRA, XỬ LÝ VĂN BẢN QPPL", this is a handbook for the inspectors to check, handle the legal normative documents and was published by the Ministry of Justice. The book contains 6 chapters, in that the chapter 2 is about the jurisdictional contradiction. The chapter 2 contains 17 situations of the jurisdictional contradiction. The situations are the real cases that the inspectors have to deal with. The situations are used to evaluate the performance of the proposed method.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{rpt-img/sotay.png}
+\caption{A document for validating}
+\label{fig:docex}
+\end{figure}
+
+For example one case in the handbook about the contradiction in the circular No. 11/2015/TT-BXD dated December 30, 2015 of Ministry of Construction regulating the issuance of real estate brokerage practice certificates; Provide guidance on training and fostering knowledge of real estate brokerage practice and real estate trading floor operations.
+
+However, according to the provisions of the Investment Law 2014, the business of training services, fostering knowledge about real estate brokerage, real estate valuation, and management and operation of real estate trading floors is an industry. conditional business occupations (Section 108, Appendix 4); Business investment conditions for conditional business lines must be stipulated in laws, ordinances, decrees and international treaties to which the Socialist Republic of Vietnam is a member. Ministries, People's Councils, People's Committees at all levels, other agencies, organizations and individuals are not allowed to issue regulations on business investment conditions (Clause 3, Article 7). 
+
+Thus, according to the provisions of the Investment Law 2014, Ministry of Construction is not allowed to regulate conditional business sectors and business investment conditions. The above Circular regulating conditions for training and fostering knowledge to practice real estate brokerage and operate real estate trading floors is not within its authority.
+
+After the annotation step, the Article 19 content is related to "Ngành nghề kinh doanh có điều kiện".
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{rpt-img/annotation.png}
+    \caption{A document for validating}
+    \label{fig:docex}
+    \end{figure}
+
+And in the final step, the system will detect the contradiction in the document. By process the Investment Law 2014, Ministries and Ministrial level agencies are not allowed to issue regulations on "Ngành nghề kinh doanh có điều kiện". The Ministry of Construction is a Ministrial level agency, so the circular No. 11/2015/TT-BXD is in contradiction with the Investment Law 2014.
+
+\subsection{ontology Construction}
+
+The jurisdiction ontology is constructed based on tables in many legal documents. Those tables often contain detailed information about the jurisdictions, such as equivalent jurisdiction. For example, a table on list of conditional business lines:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{rpt-img/jurisdiction.png     }
+    \caption{Proposed Method}
+    \label{fig:proposedmethod}
+\end{figure}
+
+For different types of table and representation, we have to design different algorithms to extract the information. For the above table, we use the following algorithm to extract the information:
+
+for row in table.rows[1:]:
+	cell = row.cells[-1]
+	text = (cell.text).lower()
+	# Add underscores between words
+	text = '_'.join(text.split())
+
+	# Add the text to the ontology as a subclass of "Ngành nghề kinh doanh có điều kiện"
+	with onto:
+		class_name = types.new_class(text, (ngành_nghề_kinh_doanh_có_điều_kiện,))
+		print(class_name)
+	print(cell.text)

@@ -1,0 +1,920 @@
+\section{Problem Formulation}
+    For a more efficient in state management, each state agency often given a specific subject, right, etc to manage or under responsibility. From now on, the right, duty, authority, etc of an agency is called \textbf{jurisdiction}. For example, the Ministry of Education is responsible for the education sector, the Ministry of Health is responsible for the health sector. When the Ministry of Education promulgate a document or policy about health, that is a violation of the law.
+
+    The problem of detecting the jurisdictional contradiction can be expressed as follows:
+
+    Let $Ag$ is the set of all Viet Nam's state agencies, $J$ is the set of all jurisdictions. We denote $J_{Ag_i} = \{J_1, J_2, \dots, J_n \}$ is the set of jurisdiction of the agency $Ag_i$.
+    
+    We denote a legal normative document $L_i = (Ag^L_i, J^L)$ where $Ag_i$ is the agency that promulgates the document and $J^L = J^L_1, J^L_2, \dots, J^L_n$ is the subset of $J$ that the document is about. Our goal is to find the subset of $J^L$ that is not in $J_{Ag^L_i}$. Denote this subset as $J^L_{\text{violation}}$, we have:
+    $$
+        J^L_{\text{violation}} = J^L - J_{Ag^L_i}
+    $$
+
+    A legal normative is a violation of the law if and only if there exists a legal normative $(Ag_i, J_i)$ such that $Ag_i$ is not in $J_i$.
+
+\section{Legal ontology}
+\subsection{Definition}
+
+    Our work utilize 2 types of legal ontology: the legal ontology of the jurisdictions and the legal ontology of authority. 
+    
+    The legal ontology of the jurisdictions is an ontology that represents the hierarchy of the jurisdictions. The need for this ontology emerged from the fact that the jurisdiction of an agency is not always stated detailedly in legal normative documents. Sometimes an agency is given a general jurisdiction and the detailed jurisdictions are stated in the appendix of that legal normative document.
+
+    \begin{definition}
+        A jurisdiction ontology $O$ consists of four elements 
+        
+        $$\{E, R\}$$
+        
+        where $E$ is a set of legal entities, each entity is a class; $R$ is a set of relations.
+    \end{definition}
+
+    The authority ontology is an ontology that represents the relation between the agencies and the jurisdictions. This ontology is used to determine the jurisdiction of an agency. The authority ontology is constructed based on the legal normative documents.
+
+
+    \begin{definition}
+        An authority ontology $O$ consists of four elements 
+        
+        $$\{E, R, A\}$$
+        
+        where $E$ is a set of legal entities, each entity is a class; $R$ is a set of relations; $A$ is a set of axioms.
+    \end{definition}
+
+    \textbf{Set of legal entities}
+
+    Legal entities are the entities that are used to represent the legal concepts. In our work, the legal entities are the agencies and the jurisdictions.
+
+    \textbf{Set of relations}
+
+    The relations are the relations between the legal entities. Among the jurisdictions, the relation is the "is-a" relation. Among the agencies and the jurisdictions, the relation is the "has-the-authority" or "has-no-authority" relation.
+
+    \textbf{Set of axioms}
+
+    The axioms are the constraints that the ontology must satisfy. For example, the axiom that states that one specific jurisdiction is shared by two agencies.
+
+\section{Proposed Method}
+
+The proposed method consists of 3 main processes: Processing the legal normative documents; processing pursuant documents extracted from the legal normative documents; and detecting the jurisdictional contradiction.
+
+Processing the legal normative documents:
+    \begin{itemize}
+        \item Indexing the legal normative documents based on article, clause, etc.
+        \item Extracting document's promulgated agency and articles content.
+        \item Annotating articles content with the jurisdictions ontology.
+    \end{itemize}
+
+Processing pursuant documents:
+    \begin{itemize}
+        \item Extracting the pursuant documents from the legal normative documents.
+        \item Indexing the pursuant documents.
+        \item Extracting jurisdictional paragraphs from the pursuant documents, which are the paragraphs that state the jurisdiction of the agency.
+        \item Annotating the jurisdictional paragraphs with the jurisdictions ontology.
+        \item Extracting agencies and jurisdiction from jurisdictional paragraphs then constructing the authority ontology based on those information.
+    \end{itemize}
+
+Detecting the jurisdictional contradiction:
+    \begin{itemize}
+        \item Matching the jurisdiction of the agency in the legal normative documents with the jurisdiction of the agency in the authority ontology.
+        \item Detecting the jurisdictional contradiction.
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{rpt-img/pipeline.png}
+        \caption{Proposed Method}
+        \label{fig:proposedmethod}
+    \end{figure}
+
+\subsection{Document Indexing}
+
+    The main purpose of this step is to index the articles, clauses and points of the documents. This step is necessary for the next steps to extract the information from the documents because articles, clauses, points are often used to refer to the specific content of the documents. The step also helps to get the information that a higher in level component didn't contain enough information. For example:
+
+    "Bộ Tài chính hướng dẫn cụ thể quy định tại các Khoản 2 và 3 Điều này."
+
+    In this sentence, "Khoản 2 và 3 Điều này" refers to the specific content of the document. The indexing step will help to extract the content of the articles, clauses, points that are referred to in the documents.
+
+    "Điều 7. Trách nhiệm của Ủy ban nhân dân cấp huyện và các Sở, ngành
+    
+    1. Ủy ban nhân dân cấp huyện
+    
+    a) Thành lập Hội đồng tư vấn (gồm đại diện lãnh đạo Ủy ban nhân dân cấp huyện (là chủ tịch hội đồng), Phòng Tài nguyên và Môi trường, Thanh tra, Phòng Quản lý đô thị thành phố, Phòng Kinh tế và Hạ tầng các huyện, Chi nhánh Văn phòng Đăng ký đất đai, Ủy ban nhân dân cấp xã nơi có đất và các thành viên khác (nếu có)) để giải quyết tách thừa hình thành và mở rộng đường giao thông, hạ tầng kỹ thuật khác vào điểm dân cư hoặc lối đi vào nhà ở riêng lẻ; đất thuộc hành lang an toàn bảo vệ công trình công cộng.
+    Xây dựng quy chế làm việc, quy chế phối hợp của Hội đồng tư vấn để tổ chức thực hiện."
+
+    In this example, the first paragraph and the second paragraph havn't mentioned the specific jurisdictions of the agencies. The indexing step will help to extract the content of the articles, clauses, points that are referred to in the documents.
+
+    Algorithm 1 describes the process of indexing the legal normative documents.
+
+    
+    \begin{algorithm}
+        \caption{Indexing the legal normative documents}
+        \KwIn{The legal normative documents}
+        \KwOut{The indexed documents}
+        initialize all paragraph index to "0.0.0"\;
+        $ n \gets number of paragraphs $\;
+        \For{$i \gets 1$ \KwTo $n$}{
+            $previous\_element\_index\_list \gets document[i-1]["index"].split(".")$\;
+            $previous\_element\_section\_number \gets int(previous\_element\_index\_list[0])$\;
+            $previous\_element\_subsection\_number \gets int(previous\_element\_index\_list[1])$\;
+            $element \gets document[i]$\;
+            \If{$element["text"].startswith("Chương")$}{
+                \tcp{remove that element from the list}
+                continue\;
+            }
+            \tcp{elif element["text"] starts with "Mục " and a number}
+            \If{$re.match(r"^Mục \d+", element["text"])$}{
+                \tcp{remove that element from the list}
+                continue\;
+            }
+            \If{$element["text"].startswith("Điều")$}{
+                \tcp{section number is the first word right after "Điều", remove the dot at the end}
+                $section\_number \gets element["text"].split()[1][:-1]$\;
+                \tcp{update the index}
+                $index\_list \gets element["index"].split(".")$\;
+                $index\_list[0] \gets section\_number$\;
+                $element["index"] \gets ".".join(index\_list)$;
+                $data\_for\_print.append($\{
+                    "index" : element["index"],
+                    "text" : element["text"]
+                \}$\;
+            }
+            \If{$re.match(r"^\d+\.", element["text"])$}{
+                \tcp{subsection number is the first word, remove the dot at the end}
+                $subsection\_number \gets element["text"].split(".")[0]$\;
+                \tcp{update the index}
+                $index\_list \gets element["index"].split(".")$\;
+                $index\_list[1] \gets subsection\_number$\;
+                $index\_list[0] \gets str(previous\_element\_section\_number)$\;
+                $element["index"] \gets ".".join(index\_list)$;
+                $data\_for\_print.append($\{
+                    "index" : element["index"],
+                    "text" : element["text"]
+                \}$\;
+            }
+            \tcp{else if element["text"] starts with a character and a ) then it is a point, update the index}
+            \If{$re.match(r"^[a-zđê]\)", element["text"], re.IGNORECASE)$}{
+                \tcp{point number is the first character, remove the bracket at the end}
+                $point\_number \gets element["text"].split(")")[0]$\;
+                \tcp{update the index}
+                $index\_list \gets element["index"].split(".")$\;
+                $index\_list[2] \gets point\_number$\;
+                $index\_list[1] \gets str(previous\_element\_subsection\_number)$\;
+                $index\_list[0] \gets str(previous\_element\_section\_number)$\;
+                $element["index"] \gets ".".join(index\_list)$;
+                $data\_for\_print.append($\{
+                    "index" : element["index"],
+                    "text" : element["text"]
+                \}$\;
+            }
+            \Else{
+                $index\_list \gets element["index"].split(".")$\;
+                $index\_list[0] \gets str(previous\_element\_section\_number)$\;
+                $element["index"] \gets ".".join(index\_list)$;
+                $data\_for\_print.append($\{
+                    "index" : element["index"],
+                    "text" : element["text"]
+                \}$\;
+            }
+        }
+    \end{algorithm}
+
+\subsection{Information Extraction}
+
+    The main purpose of this step is to extract the information from the documents. The information that we need to extract is the promulgated agency and the content of the articles. The promulgated agency is the agency that promulgates the document. The content of the articles is the content of the articles, clauses, points that are referred to in the documents. The information extraction step is necessary for the next steps to annotate the content of the articles with the jurisdictions ontology.
+
+    Algorithm 2 describes the process of extracting the articles content from the legal normative documents.
+
+    \begin{algorithm}
+        \caption{Extracting the articles content from the legal normative documents}
+        \KwIn{The legal normative documents}
+        \KwOut{The extracted articles content}
+        \For{$i \gets 1$ \KwTo $n$}{
+            \If{$document[i]["text"].startswith("Điều")$}{
+                $article\_number \gets document[i]["text"].split(" ")[1][:-1]$\;
+                \If{$article\_number$ not in $dieu\_document$}{
+                    $dieu\_document[article\_number] \gets document[i]["text"]$\;
+                }
+            }
+            \Else{
+                $dieu\_document[article\_number] += " " + document[i]["text"]$\;
+            }
+        }
+
+    Algorithm 3 describes the process of extracting the agencies and their corresponding jurisdictions from the pursuant documents. First we use a simple rule to extract jurisdictional paragraphs: Which paragraph contains the name of the agency is the jurisdictional paragraph.
+
+    To get the jurisdictions from those jurisdictional paragraphs, we use a rule-based method. We use a list of keywords that are often used to describe the jurisdictions. These keywords are separated into 2 main purpose: prohibit and allow.
+
+    Let $K_{\text{prohibit}}$ is the set of keywords that are used to describe the jurisdictions that the agency is not allowed to do. Let $K_{\text{allow}}$ is the set of keywords that are used to describe the jurisdictions that the agency is allowed to do.
+
+    In this research, we take into account two patterns of the jurisdictional paragraphs:
+
+    First pattern: The jurisdiction appear after the authority keyword and the agency name. For example: "The Ministry of Education is not allowed to manage the health sector."
+
+    $$
+        Ag_i + K_{\text{prohibit}} + J_i
+    $$
+
+    Second pattern: The jurisdiction appear before the authority keyword and the agency name. For example: "The cancer medicine is under the responsibility of the Ministry of Health."
+
+    $$
+        J_i + K_{\text{allow}} + Ag_i
+    $$
+
+    \begin{table}[H]
+        \begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
+            \hline
+            Before Allow & After Allow & Before Prohibit & After Prohibit \\
+            \hline
+            Quản lý & Chỉ đạo & Không được & Cấm \\
+            \hline
+            Phụ trách & Điều hành & Không thể & Hạn chế \\
+            \hline
+            Chịu trách nhiệm & Thực hiện & Không được & Nghiêm cấm \\
+            \hline
+            Đảm bảo & Quản lý & Không thể & Cấm \\
+            \hline
+            Không được quyết định bởi & Được quyết định bởi & Không được & Cấm \\
+            \hline
+            & & có thẩm quyền & không được ban hành \\
+        \end{tabular}
+        \caption{Keywords for extracting the jurisdictions}
+        \label{tab:keywords}
+    \end{table}
+    Algorithm 3 describes the process of extracting the agencies and their corresponding jurisdictions from the pursuant documents.
+
+    \begin{algorithm}
+        \caption{Extracting the agencies and their corresponding jurisdictions from the pursuant documents}
+        \KwIn{The pursuant documents}
+        \KwOut{The extracted agencies and their corresponding jurisdictions}
+        \For{$element$ in $main\_data$}{
+            \For{$before\_keyword$ in $before\_keyword\_list$}{
+                \If{$before\_keyword$ in $element["text"]$ and $element["text"].find(before\_keyword) < element["text"].find(element["agency"])$}{
+                    $index \gets element["text"].find(before\_keyword)$\;
+                    $process\_data.append($\{
+                        "index": element["index"], 
+                        "text": element["text"],
+                        "agency": element["agency"],
+                        "jurisdiction": element["text"][:index],
+                        "authority": before\_keyword
+                        \}$\;
+                    \If{$before\_keyword$ in $allow\_appear\_before\_keyword$}{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["allow"]$}{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]].append(element["text"][:index])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]] \gets [element["text"][:index]]$\;
+                        }
+                    }
+                    \Else{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["not\_allow"]$}{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]].append(element["text"][:index])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]] \gets [element["text"][:index]]$\;
+                        }
+                    }
+                }
+            \}
+            \For{$after\_keyword$ in $after\_keyword\_list$}{
+                \If{$after\_keyword$ in $element["text"]$ and $element["text"].find(after\_keyword) > element["text"].find(element["agency"])$}{
+                    $index \gets element["text"].find(after\_keyword)$\;
+                    $process\_data.append($\{
+                        "index": element["index"], 
+                        "text": element["text"],
+                        "agency": element["agency"],
+                        "jurisdiction": element["text"][index + len(after\_keyword):],
+                        "authority": after\_keyword
+                    \}$\;
+                    \If{$after\_keyword$ in $allow\_appear\_after\_keyword$}{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["allow"]$}{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]].append(element["text"][index + len(after\_keyword):])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]] \gets [element["text"][index + len(after\_keyword):]]$\;
+                        }
+                    }
+                    \Else{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["not\_allow"]$}{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]].append(element["text"][index + len(after\_keyword):])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]] \gets [element["text"][index + len(after\_keyword):]]$\;
+                        }
+                    }
+                }
+            }
+        }
+    \end{algorithm}
+
+
+\subsection{Constructing jurisdictions ontology}
+
+This kind of ontology is easy to build without any document processing. 
+
+
+\subsection{Information Extraction}
+
+First, we need to extract the articles, clauses and points that are referred to in the documents. First, we need a function to extract the index of the articles, clauses (under numbers) and points (under letters). The index of the articles, clauses and points are used to refer to the specific content of the documents. The function is described in Algorithm 3.
+
+\begin{algorithm}
+    \caption{Extracting standalone numbers and characters from a text from start index to end index}
+    \KwIn{The text, the start index, the end index}
+    \KwOut{The extracted standalone numbers and characters}
+    \SetKwFunction{FMain}{extract\_numbers}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        \tcp{Slicing the text from start to end index}
+        $sliced\_text \gets text[start:end+1]$\;
+        \tcp{Using regular expression to find all numbers in the sliced text}
+        $numbers \gets re.findall(r'\b\d+\b', sliced\_text)$\;
+        \tcp{Using regular expression to find all standalone characters in the sliced text}
+        $alone\_characters \gets re.findall(r'\b\w{1}\b', sliced\_text)$\;
+    }
+\end{algorithm}
+
+With the help of the function extract\_numbers, we can extract the index of the articles, clauses and points then doing the reference to the specific content of the documents. Let $Ar, Cl, Pt$ be the set of articles, clauses and points mentioned in a paragraph. Let $R$ be the set of references to the specific content of the documents. There are 3 cases of the references:
+$$
+    R = {Ar_1, Ar_2, \dots, Ar_n}
+$$
+$$
+    R = {Cl_1, Cl_2, \dots, Cl_n, Ar_1}
+$$
+$$
+    R = {Pt_1, Pt_2, \dots, Pt_n, Cl_1, Ar_1}
+$$
+
+Algorithm 4 describes the process of extracting the references to the specific content of the documents.
+
+\begin{algorithm}
+    \caption{Extracting the references to the specific content of the documents}
+    \KwIn{The index, the text}
+    \KwOut{The extracted references}
+    \SetKwFunction{FMain}{extract\_reference}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        $dieu\_list \gets []$\;
+        $khoan\_list \gets []$\;
+        $diem\_list \gets []$\;
+        $index\_list \gets index.split(".")$\;
+        $text\_lower \gets text.lower()$\;
+        \If{"điều này" in $text\_lower$}{
+            $dieu\_nay\_index \gets text\_lower.find("điều này")$\;
+            \If{"khoản" in $text\_lower$ and $text\_lower.find("khoản") < dieu\_nay\_index$}{
+                $khoan\_index \gets text\_lower.find("khoản")$\;
+                \If{"điểm" in $text\_lower$ and $text\_lower.find("điểm") < khoan\_index$}{
+                    $diem\_index \gets text\_lower.find("điểm")$\;
+                    $diem\_list \gets extract\_characters(text\_lower, diem\_index, khoan\_index)$\;
+                }
+                $khoan\_list \gets extract\_numbers(text\_lower, khoan\_index, dieu\_nay\_index)$\;
+                $dieu\_list.append(index\_list[0])$\;
+            }
+            \Else{
+                $dieu\_list.append(index\_list[0])$\;
+            }
+        }
+        \Else{
+            \If{"điều" in $text\_lower$}{
+                $dieu\_index \gets text\_lower.find("điều")$\;
+                \If{"khoản" in $text\_lower$ and $text\_lower.find("khoản") < dieu\_index$}{
+                    $khoan\_index \gets text\_lower.find("khoản")$\;
+                    \If{"điểm" in $text\_lower$ and $text\_lower.find("điểm") < khoan\_index$}{
+                        $diem\_index \gets text\_lower.find("điểm")$\;
+                        $diem\_list \gets extract\_characters(text\_lower, diem\_index, khoan\_index)$\;
+                    }
+                    $khoan\_list \gets extract\_numbers(text\_lower, khoan\_index, dieu\_index)$\;
+                    $dieu\_list \gets extract\_numbers(text\_lower, dieu\_index, dieu\_index+10)$\;
+                }
+                \Else{
+                    $dieu\_list \gets extract\_numbers(text\_lower, dieu\_index, len(text\_lower)-1)$\;
+                    \If{$len(index\_list) > 10$}{
+                        $dieu\_list \gets dieu\_list[:10]$\;
+                    }
+                }
+            }
+            \Else{
+                \If{"khoản" in $text\_lower$}{
+                    $khoan\_index \gets text\_lower.find("khoản")$\;
+                    \If{"điểm" in $text\_lower$ and $text\_lower.find("điểm") < khoan\_index$}{
+                        $diem\_index \gets text\_lower.find("điểm")$\;
+                        $diem\_list \gets extract\_characters(text\_lower, diem\_index, khoan\_index)$\;
+                    }
+                    $khoan\_list \gets extract\_numbers(text\_lower, khoan\_index, len(text\_lower)-1)$\;
+                    \If{$len(index\_list) > 10$}{
+                        $khoan\_list \gets khoan\_list[:10]$\;
+                    }
+                    $dieu\_list.append(index\_list[0])$\;
+                }
+                \Else{
+                    \If{"điểm" in $text\_lower$}{
+                        $diem\_index \gets text\_lower.find("điểm")$\;
+                        $diem\_list \gets extract\_numbers(text\_lower, diem\_index, len(text\_lower)-1)$\;
+                        \If{$len(index\_list) > 10$}{
+                            $diem\_list \gets diem\_list[:10]$\;
+                        }
+                        $khoan\_list.append(index\_list[1])$\;
+                        $dieu\_list.append(index\_list[0])$\;
+                    }
+                }
+            }
+        }
+    }
+\end{algorithm}
+
+After getting the references, we can extract the content of the articles, clauses and points that are referred to in the documents. The reference extraction is shown in Algorithm 5.
+
+\begin{algorithm}
+    \caption{Extracting the content of the articles, clauses and points that are referred to in the documents}
+    \KwIn{The index, the text}
+    \KwOut{The extracted content}
+    \SetKwFunction{FMain}{get\_reference}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        $dieu\_list, khoan\_list, diem\_list \gets extract\_reference(index, text)$\;
+        \If{$len(dieu\_list) == 1$}{
+            \If{$len(khoan\_list) > 1$}{
+                \For{$khoan$ in $khoan\_list$}{
+                    $ref\_index \gets f"{dieu\_list[0]}.{khoan}.0"$\;
+                    \Return{$ref\_data[ref\_index]$}\;
+                }
+            }
+            \Else{
+                \For{$diem$ in $diem\_list$}{
+                    $ref\_index \gets f"{dieu\_list[0]}.{khoan\_list[0]}.{diem}"$\;
+                    \Return{$ref\_data[ref\_index]$}\;
+                }
+            }
+        }
+        \Else{
+            \For{$dieu$ in $dieu\_list$}{
+                $ref\_index \gets f"{dieu}.0.0"$\;
+                \Return{$ref\_data[ref\_index]$}\;
+            }
+        }
+    }
+\end{algorithm}
+
+To provide more information about the context of a jurisdiction, we include the content of the articles, clauses and points that are higher in level than the current paragraph. The content extraction is shown in Algorithm 6.
+
+\begin{algorithm}
+    \caption{Extracting the content of the articles, clauses and points that are higher in level than the current paragraph}
+    \KwIn{The index}
+    \KwOut{The extracted content}
+    \SetKwFunction{FMain}{get\_higher\_level\_index}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        $index\_list \gets index.split(".")$\;
+        \If{$index\_list[2] != "0"$}{
+            \Return{$ref\_data[f"{index\_list[0]}.{index\_list[1]}.0"]$}\;
+        }
+        \Else{
+            \If{$index\_list[2] == "0"$ and $index\_list[1] != "0"$}{
+                \Return{$ref\_data[f"{index\_list[0]}.0.0"]$}\;
+            }
+        }
+    }
+\end{algorithm}
+
+With all element needed, now can do the final step, extract agency and their corresponding jurisdiction. The process is described in Algorithm 7.
+
+\begin{algorithm}
+    \caption{Extracting the agencies and their corresponding jurisdictions from the pursuant documents}
+    \KwIn{The pursuant documents}
+    \KwOut{The extracted agencies and their corresponding jurisdictions}
+    \SetKwFunction{FMain}{extract\_agency\_and\_jurisdiction}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        \For{$element$ in $main\_data$}{
+            \For{$before\_keyword$ in $before\_keyword\_list$}{
+                \If{$before\_keyword$ in $element["text"]$ and $element["text"].find(before\_keyword) < element["text"].find(element["agency"])$}{
+                    $index \gets element["text"].find(before\_keyword)$\;
+                    $process\_data.append($\{
+                        "index": element["index"], 
+                        "text": element["text"],
+                        "agency": element["agency"],
+                        "jurisdiction": element["text"][:index],
+                        "authority": before\_keyword
+                        \}$\;
+                    \If{$before\_keyword$ in $allow\_appear\_before\_keyword$}{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["allow"]$}{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]].append(element["text"][:index])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]] \gets [element["text"][:index]]$\;
+                        }
+                    }
+                    \Else{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["not\_allow"]$}{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]].append(element["text"][:index])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]] \gets [element["text"][:index]]$\;
+                        }
+                    }
+                }
+            \}
+            \For{$after\_keyword$ in $after\_keyword\_list$}{
+                \If{$after\_keyword$ in $element["text"]$ and $element["text"].find(after\_keyword) > element["text"].find(element["agency"])$}{
+                    $index \gets element["text"].find(after\_keyword)$\;
+                    $process\_data.append($\{
+                        "index": element["index"], 
+                        "text": element["text"],
+                        "agency": element["agency"],
+                        "jurisdiction": element["text"][index + len(after\_keyword):],
+                        "authority": after\_keyword
+                    \}$\;
+                    \If{$after\_keyword$ in $allow\_appear\_after\_keyword$}{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["allow"]$}{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]].append(element["text"][index + len(after\_keyword):])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["allow"][element["agency"]] \gets [element["text"][index + len(after\_keyword):]]$\;
+                        }
+                    }
+                    \Else{
+                        \If{$element["agency"]$ in $agency\_and\_jurisdiction["not\_allow"]$}{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]].append(element["text"][index + len(after\_keyword):])$\;
+                        }
+                        \Else{
+                            $agency\_and\_jurisdiction["not\_allow"][element["agency"]] \gets [element["text"][index + len(after\_keyword):]]$\;
+                        }
+                    }
+                }
+            }
+        }
+    }
+\end{algorithm}
+
+\subsection{Document Annotation}
+
+To annotate a paragraph with the jurisdictions ontology, we need to extract the entities from the paragraph then match them with the entities in the jurisdictions ontology.
+
+The step of matching is done by means of TF-IDF algorithm and Cosine similarity. The TF-IDF algorithm is used to convert the entities into vectors. The Cosine similarity is used to calculate the similarity between the vectors.
+
+The TF-IDF algorithm is used to convert the entities into vectors. The TF-IDF algorithm is a statistical method that is used to evaluate the importance of a word in a document. The TF-IDF algorithm is calculated as follows:
+
+\textbf{TF}
+
+TF-term frequency, $tf(t, d)$ is the number of times term $t$ appears in document $d$.
+$$
+    tf(t, d) = \frac{f_{t,d}}{\sum_{t' \in d} f_{t',d}}
+$$
+
+where $f_{t,d}$ is the number of times term $t$ appears in document $d$.
+
+\textbf{IDF}
+
+IDF-inverse document frequency, $idf(t, D)$ is the logarithm of the number of documents in the corpus $D$ divided by the number of documents that contain term $t$. This is a measure of how rare the term is in the corpus.
+$$
+    idf(t, D) = \log \frac{|D|}{|\{d \in D : t \in d\}|}
+$$
+
+with
+\begin{itemize}
+    \item $|D|$ is the number of documents in the corpus $D$.
+    \item $|\{d \in D : t \in d\}|$ is the number of documents that contain term $t$. If the term is not in the corpus, this will lead to a division by zero. It is therefore common to adjust the formula to $idf(t, D) = \log \frac{|D|}{1 + |\{d \in D : t \in d\}|}$.
+\end{itemize}
+
+\textbf{TF-IDF}
+
+The TF-IDF algorithm is calculated as follows:
+$$
+    tfidf(t, d, D) = tf(t, d) \times idf(t, D)
+$$
+
+In the context of term frequency-inverse document frequency (TF-IDF) algorithm, the entities are the terms and the paragraphs are the documents. The entities are converted into vectors using the TF-IDF algorithm.
+
+The Cosine similarity is used to calculate the similarity between the vectors. The idea behind the Cosine similarity is to measure the similarity between two vectors by calculating the cosine of the angle between them. The Cosine similarity is calculated as follows:
+$$
+    \text{similarity} = \cos(\theta) = \frac{A \cdot B}{\|A\| \times \|B\|}
+$$
+
+where $A$ and $B$ are the vectors, $\|A\|$ and $\|B\|$ are the norms of the vectors.
+
+The algorithm for annotating a paragraph with the jurisdictions ontology is described in Algorithm 8.
+
+\begin{algorithm}
+    \caption{Annotating a paragraph with the jurisdictions ontology}
+    \KwIn{The paragraph, the jurisdictions ontology}
+    \KwOut{The annotated paragraph}
+    \SetKwFunction{FMain}{annotate\_paragraph}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        $entities \gets extract\_entities(paragraph)$\;
+        $vectors \gets tfidf(entities)$\;
+        $similarity\_matrix \gets cosine\_similarity(vectors)$\;
+        \For{$entity$ in $entities$}{
+            $max\_similarity \gets 0$\;
+            $max\_authority \gets ""$\;
+            \For{$authority$ in $authorities$}{
+                \If{$similarity(entity, authority) > max\_similarity$}{
+                    $max\_similarity \gets similarity(entity, authority)$\;
+                    $max\_authority \gets authority$\;
+                }
+            }
+            $annotated\_paragraph \gets replace(entity, max\_authority)$\;
+        }
+    }
+\end{algorithm}
+
+\subsection{Detecting the jurisdictional contradiction}
+
+The jurisdictional contradiction is detected by comparing the jurisdiction of the agency in the legal normative documents with the jurisdiction of the agency in the authority ontology. The jurisdiction of the agency in the legal normative documents is the jurisdiction that is extracted from the pursuant documents. The jurisdiction of the agency in the authority ontology is the jurisdiction that is constructed based on the legal normative documents.
+
+\section{Metric}
+
+Our research is evaluated on a book called "SỔ TAY TÌNH HUỐNG NGHIỆP VỤ KIỂM TRA, XỬ LÝ VĂN BẢN QPPL", this is a handbook for the inspectors to check, handle the legal normative documents and was published by the Ministry of Justice. The book contains 6 chapters, in that the chapter 2 is about the jurisdictional contradiction. The chapter 2 contains 17 situations of the jurisdictional contradiction. The situations are the real cases that the inspectors have to deal with. The situations are used to evaluate the performance of the proposed method.
+
+\section{Result}
+
+The proposed method is implemented in Python. The implementation consists of 3 main processes: Processing the legal normative documents; processing pursuant documents extracted from the legal normative documents; and detecting the jurisdictional contradiction.
+
+The method was successfully implemented and tested on the book "SỔ TAY TÌNH HUỐNG NGHIỆP VỤ KIỂM TRA, XỬ LÝ VĂN BẢN QPPL". The method was able to detect the jurisdictional contradiction in the book. The method was able to detect 16 out of 17 situations of the jurisdictional contradiction in the book. The method was able to detect the jurisdictional contradiction with an accuracy of 94.11\%.
+
+\subsection{ontology Construction}
+
+The jurisdiction ontology is constructed based on tables in many legal documents. Those tables often contain detailed information about the jurisdictions, such as equivalent jurisdiction. For example, a table on list of conditional business lines:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{rpt-img/jurisdiction.png     }
+    \caption{Proposed Method}
+    \label{fig:proposedmethod}
+\end{figure}
+
+For different types of table and representation, we have to design different algorithms to extract the information. For the above table, we use the following algorithm to extract the information:
+
+
+\begin{algorithm}
+    \caption{Extracting the information from the table}
+    \KwIn{The table}
+    \KwOut{The extracted information}
+    \SetKwFunction{FMain}{extract\_information}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}{
+        \For{$row$ in $table.rows[1:]$}{
+            $cell \gets row.cells[-1]$\;
+            $text \gets (cell.text).lower()$\;
+            \tcp{Add underscores between words}
+            $text \gets '_'.join(text.split())$\;
+            \tcp{Add the text to the ontology as a subclass of "Ngành nghề kinh doanh có điều kiện"}
+            \With{onto:}{
+                $class\_name \gets types.new\_class(text, (ngành\_nghề\_kinh\_doanh\_có\_điều\_kiện,))$\;
+                \Return{$class\_name$}\;
+            }
+            \Return{cell.text}\;
+        }
+    }
+\end{algorithm}
+
+\subsection{Comment}
+
+The one case in the book that the method was not able to detect the jurisdictional contradiction is the case of the Clause 5, Article 3, Decision No. 58/2014/QD-UBND stipulates the authority of the Economic Zone Management Board, District and City People's Committees in demolishing construction works and individual houses built without documents. However, according to the provisions of the 2012 Law on Handling of Administrative Violations, forcing the dismantling of works or parts of works built without a permit or constructed not in accordance with the permit is a remedial measure in handling the consequences.
+
+Our jurisdiction ontology was created only based on tables in the legal documents, and didn't take into account the context of the documents. As jurisdiction can also be extracted from the context of the documents, we will improve our method by extracting the jurisdiction from the context of the documents.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{rpt-img/result.png}
+    \caption{A document for validating}
+    \label{fig:docex}
+    \end{figure}
+
+    Algorithm \ref{referance} describes the process of extracting the references to the specific content of the documents.
+
+    \begin{algorithm}[H]
+    \label{referance}
+        \caption{Extracting the references to the specific content of the documents}
+        \KwIn{$P_i$: Input paragraph, $I_{P_i} = \{Pa_i, Pc_i, Pp_i\}$: Paragraph's index}
+        \KwOut{Reference list: Articles, clauses, points set: $Ar, Cl, Pt$}
+        \SetKwFunction{FMain}{extract\_reference}
+        \SetKwProg{Fn}{Function}{:}{}
+        \Fn{\FMain{}}{
+            \tcp{$I^x_{P_i}$: Index of $x$ in $P_i$}
+            \If{"điều này" in $P_i$}
+            {
+                \eIf{"khoản" in $P_i$ and $I^{\text{khoản}}_{P_i} < I^{\text{điều này}}_{P_i}$}
+                {
+                    \eIf{"điểm" in $P_i$ and $I^{\text{điểm}}_{P_i} < I^{\text{khoản}}_{P_i}$}
+                    {
+                        $Ar \gets Pa_i$\;
+                        $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, I^{\text{điều này}}_{P_i})$\;
+                        $Pt \gets extract\_index(P_i, I^{\text{điểm}}_{P_i}, I^{\text{khoản}}_{P_i})$\;
+                    }
+                    {
+                        $Ar \gets Pa_i$\;
+                        $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, I^{\text{điều này}}_{P_i})$\;
+                        $Pt \gets \emptyset $\; 
+                    }
+                }
+                {
+                    $Ar \gets Pa_i$\;
+                    $Cl \gets \emptyset $\; 
+                    $Pt \gets \emptyset $\; 
+                }
+            }
+        }
+    \end{algorithm}
+    
+    In the case 
+    
+    \begin{algorithm}[H]
+        \caption{Extracting the references to the specific content of the documents}
+        \KwIn{$P_i$: Input paragraph, $I_{P_i} = \{Pa_i, Pc_i, Pp_i\}$: Paragraph's index}
+        \KwOut{Reference list: Articles, clauses, points set: $Ar, Cl, Pt$}
+        \SetKwFunction{FMain}{extract\_reference}
+        \SetKwProg{Fn}{Function}{:}{}
+        \Fn{\FMain{}}
+            {
+                \tcp{$I^x_{P_i}$: Index of $x$ in $P_i$}
+                \If{"điều này" not in $P_i$}
+                {
+                    \If{"điều" in $P_i$}
+                    {
+                        \eIf{"khoản" in $P_i$ and $I^{\text{khoản}}_{P_i} < I^{\text{điều}}_{P_i}$}
+                        {
+                            \eIf{"điểm" in $P_i$ and $I^{\text{điểm}}_{P_i} < I^{\text{khoản}}_{P_i}$}
+                            {
+                                $Ar \gets extract\_numbers(P_i, I^{\text{điều}}_{P_i}, I^{\text{điều}}_{P_i} + 10)$\;
+                                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, I^{\text{điều}}_{P_i})$\;
+                                $Pt \gets extract\_index(P_i, I^{\text{điểm}}_{P_i}, I^{\text{khoản}}_{P_i})$\;
+                            }
+                            {
+                                $Ar \gets extract\_numbers(P_i, I^{\text{điều}}_{P_i}, len(P_i) - 1)$\;
+                                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, I^{\text{điều}}_{P_i})$\;
+                                $Pt \gets \emptyset $\; 
+                            }
+                        }
+                        {
+                            $Ar \gets extract\_numbers(P_i, I^{\text{điều}}_{P_i}, len(P_i) - 1)$\;
+                            $Cl \gets \emptyset $\; 
+                            $Pt \gets \emptyset $\; 
+                        }
+                    }
+                    \Else
+                    {
+                        \If{"khoản" in $P_i$}
+                        {
+                            \eIf{"điểm" in $P_i$ and $I^{\text{điểm}}_{P_i} < I^{\text{khoản}}_{P_i}$}
+                            {
+                                $Ar \gets Pa_i$\;
+                                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, len(P_i) - 1)$\;
+                                $Pt \gets extract\_index(P_i, I^{\text{điểm}}_{P_i}, I^{\text{khoản}}_{P_i})$\;
+                            }
+                            {
+                                $Ar \gets Pa_i$\;
+                                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, len(P_i) - 1)$\;
+                                $Pt \gets \emptyset $\; 
+                            }
+                        }
+                        \Else
+                        {
+                            \If{"điểm" in $P_i$}
+                            {
+                                $Ar \gets Pa_i$\;
+                                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, len(P_i) - 1)$\;
+                                $Pt \gets extract\_index(P_i, I^{\text{điểm}}_{P_i}, len(P_i) - 1)$\;
+                            }
+                        }
+                    }
+                }
+            }
+    \end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Extracting clauses and points set from a text}
+    \KwIn{$P_i$: Input paragraph, $I_{P_i} = \{Pc_i, Pt_i\}$: Paragraph's index}
+    \KwOut{Reference list: Clauses, points set: $Cl, Pt$}
+    \SetKwFunction{FMain}{extract\_clauses\_points}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}
+        {
+            \tcp{$I^x_{P_i}$: Index of $x$ in $P_i$}
+            \If{"khoản này" in $P_i$}
+            {
+                $Pc \gets Pc_i$\;
+                \eIf{"điểm" in $P_i$}
+                {
+                    $Pt \gets extract\_characters(P_i, I^{\text{điểm}}_{P_i}, I^{\text{khoản này}}_{P_i})$\;
+                }
+                {
+                    $Pt \gets \emptyset $\; 
+                }
+            }
+            \ElseIf{"khoản này" not in $P_i$ and "khoản" in $P_i$}
+            {
+                $Cl \gets extract\_numbers(P_i, I^{\text{khoản}}_{P_i}, len(P_i) - 1)$\;
+                \eIf{"điểm" in $P_i}
+                {
+                    $Pt \gets extract\_characters(P_i, I^{\text{điểm}}_{P_i}, I^{\text{khoản}}_{P_i})$\;
+                }
+                {
+                    $Pt \gets \emptyset $\; 
+                }
+            }
+        }
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Extracting clauses and points set from a text}
+    \KwIn{$P_i$: Input paragraph, $I_{P_i} = \{Pa_i, Pc_i, Pt_i\}$: Paragraph's index}
+    \KwOut{Reference list: Article, clauses, points set: $Ar, Cl, Pt$}
+    \SetKwFunction{FMain}{extract\_clauses\_points}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FMain{}}
+        {
+            \tcp{$I^x_{P_i}$: Index of $x$ in $P_i$}
+            \If("điều này" in $P_i$)
+            {
+                $Ar \gets Pa_i$\;
+                $Cl, Pt \gets extract\_clauses\_points(P_i, I_{P_i})$\;
+            }
+            \ElseIf("điều này" not in $P_i$ and "điều" in $P_i)
+            {
+                $Ar \gets extract\_numbers(P_i, I^{\text{điều}}_{P_i}, I^{\text{điều}}_{P_i} + 10)$\;
+                $Cl, Pt \gets extract\_clauses\_points(P_i, I_{P_i})$\;
+            }
+            \Else
+            {
+                $Ar \gets \emptyset $\;
+                $Cl, Pt \gets extract\_clauses\_points(P_i, I_{P_i})$\;
+            }
+        }
+\end{algorithm}
+
+\subsection{Contradict Detection}
+
+The contradict detection is done by comparing each article or point in the legal normative documents with the jurisdiction of the agency in the authority ontology. If two jurisdictions are different, then there is a jurisdictional contradiction. The algorithm for contradict detection is described in Algorithm 9.
+
+To extract a jurisdiction's object property and instance related to it, we utilize a SPARQL query, named $\texttt{property\_query}$:
+
+\begin{lstlisting}
+SELECT ?property ?relatedInstance
+WHERE {
+    <URI_of_x> ?property ?relatedInstance .
+    ?property a owl:ObjectProperty .
+}
+\end{lstlisting}
+
+And a query to extract the jurisdiction's class and its instances, name $\texttt{jurisdiction_query}$:
+\begin{lstlisting}
+    SELECT ?instance
+WHERE {
+    ?instance rdf:type :Agency .
+}
+\end{lstlisting}
+
+
+\begin{algorithm}[H]
+    \caption{Contradict Detection}
+    \KwIn{$Ar$: Input Article list, $Ag$: Promulgated agency}
+    \KwOut{Contradict list: $C$}
+    \For{$Ar_i$ in $Ar$}
+    {
+        $J \gets \texttt{query_call{jurisdiction_query}}$\;
+        \For{$J_i$ in $J$}
+        {
+            $J_h \gets \texttt{jurisdiction with the highest similarity to $Ar_i$}$\;
+        }
+        $Pr, Ins \gets \texttt{query_call{J_h}}$\;
+        \For{$Pr_i$ in $Pr$}
+        {
+            \If{$Pr_i$ not in $Ar_i$}
+            {
+                $C \gets Pr_i$\;
+            }
+        } 
+    }
+    \Return{$C$}
+\end{algorithm}
+
+\subsection{Abstract}
+
+Ensuring that legal documents are promulgated with the correct authority is an important task to ensure a unified and coherent legal system. The objective of this research is to detect jurisdictional contradictions in legal normative documents. This research proposed a method of processing the legal normative documents and pursuant documents extracted from the legal normative documents through multiple steps: indexing, information extraction and document annotation. Two new kind of ontologies were also constructed to support the process and the contradiction detection. The method was successfully implemented and tested on the notebook "Sổ tay tình huống nghiệp vụ kiểm tra, xử lý văn bản QPPL". The method was able to detect 16 out of 17 situations of the jurisdictional contradiction in the book, with an accuracy of 94.11\%.
+
+\subsection{Introduction}
+
+In management science, decentralization is the division of state power to agencies and administrative units to perform the function of state management. Such division is to ensure that state management is unified and effective. All countries in the world implement such a decentralization model, but the way it operates can vary.
+
+Considering an example in Viet Nam, the Ministry of Education will be responsible for matters related to education, and the Ministry of Health will handle works related to health. However, the authorities can be much more detailed and there may be overlaps between different areas. Fortunately, those detailed authority of each agency is clearly defined in legal normative documents.
+
+Our method was unable to detect that "teaching subsidies for teachers teaching integration for people with disabilities in the province" is one of the "specific local spending tasks to carry out socio-economic development and protection tasks". To solve this problem, someone who has a deep understanding of the legal normative documents and the context of the documents is needed.
+
+\subsection{Appendix}
+
+Due to a non-disclosure agreement, I am unable to provide the full code of the method. However, I can provide a sample version of the ontologies and the processed documents. Send me an email at hoangnhatdb@gmail.com. 
+
+In this example, the 11/2015/TT-BXD is the 
+
+\begin{frame}{Legal Normative Document authority verification problem}
+    Each Viet Nam's state agency is given the right, duty or responsibility to manage a specific area. This is called the agency's authority and the areas are called the agency's jurisdiction.
+    For example, in general, the Ministry of Education and Training is responsible for education and the Ministry of Health takes care of health.
+
+    The authority verification problem is to verify whether jurisdictions in a legal normative document are under the authority of the agency that promulgated the document.
+\end{frame}
+
+\subsection{Research Objectives}
+\begin{itemize}
+    \item Examining the concepts of ontologies and its applications in the legal domain.
+    \item Proposing a method to extract jurisdictions and authority information from legal normative documents.
+    \item Constructing two new kinds of ontologies that represent the jurisdictions and authority information.
+    \item Proposing a method to detect jurisdictional contradictions in legal normative documents.
+    \item Implementing the proposed method and evaluating its performance on real legal normative documents in Viet Nam.
+
+\end{itemize}
